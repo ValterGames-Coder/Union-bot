@@ -114,6 +114,8 @@ def reg(message):
 
 @bot.message_handler(commands=['everyone'])
 def everyone(message):
+    everyone_args = str(message.text).split(' ')
+    everyone_message = everyone_args[1]
     users = database.get_users()
     text = ''
     last = users[-1][0]
@@ -124,7 +126,10 @@ def everyone(message):
             text += f'<a href="tg://user?id={user[0]}">{user[1]}</a>, '
     print(text)
     gif = open("hog-rider-coc.mp4", 'rb')
-    bot.send_animation(message.chat.id, gif, caption=f"<b>Общий сбор!</b>\n{text}", parse_mode='HTML')
+    if everyone_message is None:
+        bot.send_animation(message.chat.id, gif, caption=f"<b>Общий сбор!</b>\n{text}", parse_mode='HTML')
+    else:
+        bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n{text}", parse_mode='HTML')
 
 
 if __name__ == '__main__':
