@@ -1,6 +1,4 @@
 import random
-import sys
-
 import config
 import time
 import json
