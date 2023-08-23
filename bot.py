@@ -1,4 +1,6 @@
 import random
+import sys
+
 import config
 import time
 import json
@@ -114,10 +116,9 @@ def reg(message):
 
 @bot.message_handler(commands=['everyone'])
 def everyone(message):
-    everyone_args = str(message.text).split(' ')
-    if len(everyone_args) == 2:
-        everyone_message = everyone_args[1]
-    else:
+    everyone_message = message.text.split(maxsplit=1)[1]
+    print(everyone_message)
+    if everyone_message is None:
         everyone_message = 'Общий сбор!'
     users = database.get_users()
     text = ''
@@ -129,14 +130,17 @@ def everyone(message):
             text += f'<a href="tg://user?id={user[0]}">{user[1]}</a>, '
     print(text)
     gif = open("hog-rider-coc.mp4", 'rb')
-    bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n{text}", parse_mode='HTML')
+    bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}", parse_mode='HTML')
 
 
 if __name__ == '__main__':
     print('----------------Bot start-----------------\n')
     while True:
+        command = input()
+        if command == 'exit':
+            break
         try:
             bot.polling(none_stop=True)
         except Exception as e:
             print(e)
-            time.sleep(3)
+            time.sleep(1)
