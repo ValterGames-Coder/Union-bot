@@ -131,14 +131,24 @@ def everyone(message):
     bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}", parse_mode='HTML')
 
 
+def loop1():
+    global stop
+    while stop is False:
+        if 'stop' in input():
+            print('stop')
+            stop = True
+            break
+
+
 if __name__ == '__main__':
     print('----------------Bot start-----------------\n')
+    stop = input()
     while True:
-        command = input()
-        if command == 'exit':
+        if 's' in stop:
             break
         try:
+            stop = input()
             bot.polling(none_stop=True)
         except Exception as e:
             print(e)
-            time.sleep(1)
+            time.sleep(3)
