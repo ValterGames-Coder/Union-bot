@@ -2,6 +2,7 @@ import config
 import time
 import database
 import telebot
+import json
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
 
@@ -74,8 +75,7 @@ def kick(message):
         bot.reply_to(message, "Вы не указали пользователя")
 
 
-@bot.message_handler(commands=['reg'])
-def reg(message):
+def oldreg(message):
     users = database.get_users()
     users_id = []
     for user in users:
@@ -94,20 +94,32 @@ def reg(message):
                                parse_mode='HTML')
 
 
-def on_reg(member):
-    users = database.get_users()
-    users_id = []
-    for user in users:
-        users_id.append(user[0])
-    print(users_id)
-    if member.id in users_id:
-        return f'<a href="tg://user?id={member.id}">Ты уже есть в базе данных</a>'
+@bot.message_handler(commands=['reg'])
+def reg(message):
+    user = database.get_user(message.from_user.id)
+    print(user)
+    if user is None:
+        if message.from_user.last_name is None:
+            full_name = message.from_user.first_name
+        else:
+            full_name = f"{message.from_user.first_name} {message.from_user.last_name}"
+        bot.send_message(message.chat.id,
+                         f'<a href="tg://user?id={message.from_user.id}">{database.set_user(message.from_user.id, full_name)}</a>',
+                         parse_mode='HTML')
     else:
+        bot.send_message(message.chat.id, f'<a href="tg://user?id={message.from_user.id}">Ты уже есть в базе данных</a>', parse_mode='HTML')
+
+
+def on_reg(member):
+    user = database.get_user(member.id)
+    if user is None:
         if member.last_name is None:
             full_name = member.first_name
         else:
             full_name = f"{member.first_name} {member.last_name}"
         return f'<a href="tg://user?id={member.id}">{database.set_user(member.id, full_name)}</a>'
+    else:
+        return f'<a href="tg://user?id={member.id}">Ты уже есть в базе данных</a>'
 
 
 def on_del(member):
@@ -116,21 +128,18 @@ def on_del(member):
 
 @bot.message_handler(commands=['everyone'])
 def everyone(message):
-    everyone_message = message.text.split(maxsplit=1)[1]
+    everyone_message = 'Общий сбор!'
     print(everyone_message)
-    if everyone_message is None:
-        everyone_message = 'Общий сбор!'
     users = database.get_users()
     text = ''
-    last = users[-1][0]
     for user in users:
-        if user[0] == last:
-            text += f'<a href="tg://user?id={user[0]}">{user[1]}</a>'
-        else:
+        user_status = bot.get_chat_member(message.chat.id, user[0]).status
+        print(user_status)
+        if user_status != 'left':
             text += f'<a href="tg://user?id={user[0]}">{user[1]}</a>, '
     print(text)
     gif = open("hog-rider-coc.mp4", 'rb')
-    bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}", parse_mode='HTML')
+    bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}"[:-2], parse_mode='HTML')
 
 
 @bot.message_handler(content_types=['new_chat_members'])
