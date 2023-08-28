@@ -1,7 +1,6 @@
 import random
 import config
 import time
-import json
 import database
 import telebot
 
@@ -12,21 +11,6 @@ bot = telebot.TeleBot(config.BOT_TOKEN)
 def start(message):
     bot.send_message(message.chat.id, 'Hello!')
     print(time.clock())
-
-
-@bot.message_handler(commands=['piska'])
-def piska(message):
-    with open("piska.json", "r") as file:
-        json_string = json.load(file)
-        length = json_string['length']
-        new_length = random.randint(-10, 10)
-        length += new_length
-        to_json = {'length': length}
-        bot.send_message(message.chat.id, f'@{message.from_user.username} нарастил боту письку на {new_length} см!\n'
-                                                f'Размер письки бота: {length}')
-        with open('piska.json', 'w') as f:
-            f.write(json.dumps(to_json))
-        print(length)
 
 
 @bot.message_handler(commands=['help'])
@@ -131,24 +115,12 @@ def everyone(message):
     bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}", parse_mode='HTML')
 
 
-def loop1():
-    global stop
-    while stop is False:
-        if 'stop' in input():
-            print('stop')
-            stop = True
-            break
-
-
 if __name__ == '__main__':
     print('----------------Bot start-----------------\n')
-    stop = input()
     while True:
-        if 's' in stop:
-            break
         try:
-            stop = input()
             bot.polling(none_stop=True)
         except Exception as e:
             print(e)
             time.sleep(3)
+
