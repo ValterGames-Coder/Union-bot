@@ -19,3 +19,8 @@ def set_user(id: int, name: str):
     cursor.execute("INSERT INTO users VALUES (?, ?)", (id, name))
     db.commit()
     return 'Зарегестрирован'
+
+
+def delete_user(id: int):
+    cursor.execute(f"DELETE FROM users WHERE id = {id}")
+    db.commit()

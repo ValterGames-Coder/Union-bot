@@ -1,4 +1,3 @@
-import random
 import config
 import time
 import database
@@ -10,7 +9,6 @@ bot = telebot.TeleBot(config.BOT_TOKEN)
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, 'Hello!')
-    print(time.clock())
 
 
 @bot.message_handler(commands=['help'])
@@ -96,6 +94,26 @@ def reg(message):
                                parse_mode='HTML')
 
 
+def on_reg(member):
+    users = database.get_users()
+    users_id = []
+    for user in users:
+        users_id.append(user[0])
+    print(users_id)
+    if member.id in users_id:
+        return f'<a href="tg://user?id={member.id}">Ты уже есть в базе данных</a>'
+    else:
+        if member.last_name is None:
+            full_name = member.first_name
+        else:
+            full_name = f"{member.first_name} {member.last_name}"
+        return f'<a href="tg://user?id={member.id}">{database.set_user(member.id, full_name)}</a>'
+
+
+def on_del(member):
+    return database.delete_user(member.id)
+
+
 @bot.message_handler(commands=['everyone'])
 def everyone(message):
     everyone_message = message.text.split(maxsplit=1)[1]
@@ -113,6 +131,16 @@ def everyone(message):
     print(text)
     gif = open("hog-rider-coc.mp4", 'rb')
     bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}", parse_mode='HTML')
+
+
+@bot.message_handler(content_types=['new_chat_members'])
+def handler_new_member(message):
+    bot.send_message(message.chat.id, on_reg(message.new_chat_members[0]), parse_mode='HTML')
+
+
+@bot.message_handler(content_types=['left_chat_member'])
+def handler_left_member(message):
+    on_del(message.left_chat_member)
 
 
 if __name__ == '__main__':
