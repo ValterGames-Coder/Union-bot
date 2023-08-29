@@ -224,9 +224,9 @@ def eat(message):
 
 @bot.message_handler(commands=['joke'])
 def anekdot(message):
-    if len( message.text.split(maxsplit=1)) == 2:
+    if len(message.text.split(maxsplit=1)) == 2:
         tag = message.text.split(maxsplit=1)[1]
-        url = 'https://www.anekdot.ru/tag/' + tag
+        url = 'https://www.anekdot.ru/tags/' + tag
     else:    
         url = 'https://www.anekdot.ru/random/anekdot/'
     r = requests.get(url)
