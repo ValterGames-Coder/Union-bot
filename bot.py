@@ -2,7 +2,10 @@ import config
 import time
 import database
 import telebot
-import json
+import schedule
+from threading import Thread
+import requests
+import random
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
 
@@ -10,11 +13,12 @@ bot = telebot.TeleBot(config.BOT_TOKEN)
 @bot.message_handler(commands=['start'])
 def start(message):
     bot.send_message(message.chat.id, 'Hello!')
+    print(message.chat.id)
 
 
 @bot.message_handler(commands=['help'])
 def help(message):
-    bot.send_message(message.chat.id, 'Команды: /mute /unmute /ban /kick /reg')
+    bot.send_message(message.chat.id, 'Команды: /mute /unmute /ban /kick /reg /tamepet /pet')
 
 
 @bot.message_handler(commands=['mute'])
@@ -75,29 +79,9 @@ def kick(message):
         bot.reply_to(message, "Вы не указали пользователя")
 
 
-def oldreg(message):
-    users = database.get_users()
-    users_id = []
-    for user in users:
-        users_id.append(user[0])
-    print(users_id)
-    if message.from_user.id in users_id:
-        bot.send_message(message.chat.id, f'<a href="tg://user?id={message.from_user.id}">Ты уже есть в базе данных</a>',
-                                   parse_mode='HTML')
-    else:
-        if message.from_user.last_name is None:
-            full_name = message.from_user.first_name
-        else:
-            full_name = f"{message.from_user.first_name} {message.from_user.last_name}"
-        bot.send_message(message.chat.id,
-                               f'<a href="tg://user?id={message.from_user.id}">{database.set_user(message.from_user.id, full_name)}</a>',
-                               parse_mode='HTML')
-
-
 @bot.message_handler(commands=['reg'])
 def reg(message):
     user = database.get_user(message.from_user.id)
-    print(user)
     if user is None:
         if message.from_user.last_name is None:
             full_name = message.from_user.first_name
@@ -142,6 +126,38 @@ def everyone(message):
     bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}"[:-2], parse_mode='HTML')
 
 
+@bot.message_handler(commands=['tamepet'])
+def tame_pet(message):
+    pets = database.get_pets()
+    pets_id = []
+    for pet in pets:
+        pets_id.append(pet[0])
+    if message.from_user.id in pets_id:
+        bot.reply_to(message, 'У тебя уже есть питомец')
+    elif len(message.text.split(' ')) == 2:
+        bot.reply_to(message, 'Вы не указали тип питомца (на английском желательно)')
+    elif len(message.text.split(' ')) == 3:
+        name = message.text.split(' ')[1]
+        type = message.text.split(' ')[2]
+        bot.reply_to(message, database.create_pet(message.from_user.id, name, type))
+    else:
+        bot.reply_to(message,'Вы не указали имя питомца')
+
+
+@bot.message_handler(commands=['pet'])
+def pet(message):
+    pet = database.get_pet(message.from_user.id)
+    print(pet)
+    if pet is None:
+        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
+    else:
+        text = f'<a href="tg://user?id={pet[0]}">Питомец {pet[1]}</a>\n'
+        text += f'🚶 Прогулки: {pet[2]}\n'
+        text += f'😀 Настроение: {pet[3]}\n'
+        text += f'🌯 Еда: {pet[4]}\n'
+        print()
+        bot.send_message(message.chat.id, text, parse_mode='HTML')
+
 @bot.message_handler(content_types=['new_chat_members'])
 def handler_new_member(message):
     bot.send_message(message.chat.id, on_reg(message.new_chat_members[0]), parse_mode='HTML')
@@ -152,7 +168,63 @@ def handler_left_member(message):
     on_del(message.left_chat_member)
 
 
-if __name__ == '__main__':
+chat_id = -1001880123787
+def update():
+    text = database.update_pets()
+    print(text)
+    bot.send_message(chat_id, text, parse_mode='HTML')
+
+@bot.message_handler(commands=['play'])
+def play(message):
+    pet = database.get_pet(message.from_user.id)
+    response = requests.get("https://g.tenor.com/v1/search?q={0}&key=LIVDSRZULELA&limit=30".format(f'{pet[5]} play'))
+    data = response.json()
+    gif = random.choice(data["results"])
+    if pet is None:
+        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
+    else:
+        bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.play_pet(message.from_user.id))
+
+
+@bot.message_handler(commands=['walk'])
+def walk(message):
+    pet = database.get_pet(message.from_user.id)
+    response = requests.get("https://g.tenor.com/v1/search?q={0}&key=LIVDSRZULELA&limit=30".format(f'walk with {pet[5]}'))
+    data = response.json()
+    gif = random.choice(data["results"])
+    if pet is None:
+        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
+    else:
+        bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.walk_pet(message.from_user.id))
+
+
+@bot.message_handler(commands=['eat'])
+def eat(message):
+    pet = database.get_pet(message.from_user.id)
+    response = requests.get("https://g.tenor.com/v1/search?q={0}&key=LIVDSRZULELA&limit=30".format(f'{pet[5]} eat'))
+    data = response.json()
+    gif = random.choice(data["results"])
+    if pet is None:
+        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
+    else:
+        bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.eat_pet(message.from_user.id))
+
+
+schedule.every().minute.do(update)
+
+
+def loop1():
+    print('----------------Pets start-----------------\n')
+    while True:
+        try:
+            schedule.run_pending()
+            time.sleep(10)
+        except Exception as e:
+            print(e)
+            time.sleep(3)
+
+
+def loop2():
     print('----------------Bot start-----------------\n')
     while True:
         try:
@@ -161,3 +233,7 @@ if __name__ == '__main__':
             print(e)
             time.sleep(3)
 
+
+if __name__ == '__main__':
+    Thread(target=loop1).start()
+    Thread(target=loop2).start()
