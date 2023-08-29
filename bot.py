@@ -230,10 +230,13 @@ def anekdot(message):
     else:    
         url = 'https://www.anekdot.ru/random/anekdot/'
     r = requests.get(url)
-    soup = BeautifulSoup(r.text, 'html.parser')
-    anekdots = soup.find_all('div', class_ = 'text')
-    anekdot = random.choice([c.text for c in anekdots])
-    bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
+    if r.status_code == 200:
+        bot.send_message(message.chat.id, 'Нет такого тега', parse_mode='HTML')
+    else:
+        soup = BeautifulSoup(r.text, 'html.parser')
+        anekdots = soup.find_all('div', class_ = 'text')
+        anekdot = random.choice([c.text for c in anekdots])
+        bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
 
 
 #schedule.every(15).minutes.do(update)
