@@ -152,11 +152,21 @@ def pet(message):
         bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
     else:
         text = f'<a href="tg://user?id={pet[0]}">Питомец {pet[1]}</a>\n'
-        text += f'🚶 Прогулки: {pet[2]}\n'
-        text += f'😀 Настроение: {pet[3]}\n'
-        text += f'🌯 Еда: {pet[4]}\n'
+        text += f'🚶 Прогулки: \n<b>{bar(pet[2])}</b>\n'
+        text += f'😀 Настроение: \n<b>{bar(pet[3])}</b>\n'
+        text += f'🌯 Еда: \n<b>{bar(pet[4])}</b>\n'
         print()
         bot.send_message(message.chat.id, text, parse_mode='HTML')
+
+
+def bar(count: int):
+    text = ''
+    for i in range(10):
+        if i < count:
+            text += '■'
+        else:
+            text += '□'
+    return text
 
 @bot.message_handler(content_types=['new_chat_members'])
 def handler_new_member(message):
@@ -171,8 +181,8 @@ def handler_left_member(message):
 chat_id = -1001880123787
 def update():
     text = database.update_pets()
-    print(text)
-    bot.send_message(chat_id, text, parse_mode='HTML')
+    if text != '':
+        bot.send_message(chat_id, text, parse_mode='HTML')
 
 @bot.message_handler(commands=['play'])
 def play(message):
@@ -210,7 +220,7 @@ def eat(message):
         bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.eat_pet(message.from_user.id))
 
 
-schedule.every().minute.do(update)
+schedule.every(15).minutes.do(update)
 
 
 def loop1():
@@ -218,7 +228,7 @@ def loop1():
     while True:
         try:
             schedule.run_pending()
-            time.sleep(10)
+            time.sleep(1)
         except Exception as e:
             print(e)
             time.sleep(3)

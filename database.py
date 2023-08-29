@@ -54,34 +54,42 @@ def get_pets():
 
 
 def update_pets():
-    pets = cursor.execute(f"SELECT * FROM pets")
-    db.commit()
+    pets = cursor.execute(f"SELECT * FROM pets").fetchall()
+    print(pets)
     text = ''
+    for pet in pets:
+        print(pet)
+        if pet[2] - 1 <= 0:
+            text += f'<a href="tg://user?id={pet[0]}">{pet[1]} хочет гулять</a>!\n'
+        if pet[3] - 1 <= 0:
+            text += f'<a href="tg://user?id={pet[0]}">{pet[1]} хочет играть</a>!\n'
+        if pet[4] - 1 <= 0:
+            text += f'<a href="tg://user?id={pet[0]}">{pet[1]} хочет есть</a>!\n'
+
+    print(text)
+    sql_update()
+    db.commit()
+    return text
+
+
+def sql_update():
+    pets = cursor.execute(f"SELECT * FROM pets").fetchall()
     for pet in pets:
         if pet[2] - 1 > -1:
             cursor.execute(f"UPDATE pets SET walk = {pet[2] - 1} WHERE id = {pet[0]}")
-            db.commit()
-        else:
-            text += f'<a href="tg://user?id={pet[0]}">Питомец {pet[1]} хочет гулять</a>!\n'
-
         if pet[3] - 1 > -1:
             cursor.execute(f"UPDATE pets SET play = {pet[3] - 1} WHERE id = {pet[0]}")
-            db.commit()
-        else:
-            text += f'<a href="tg://user?id={pet[0]}">Питомец {pet[1]} хочет играть</a>!\n'
-
         if pet[4] - 1 > -1:
             cursor.execute(f"UPDATE pets SET eat = {pet[4] - 1} WHERE id = {pet[0]}")
-            db.commit()
-        else:
-            text += f'<a href="tg://user?id={pet[0]}">Питомец {pet[1]} хочет кушать</a>!\n'
-    return text
-
+        db.commit()
 
 def play_pet(id: int):
     count = random.randint(2, 5)
     pet = cursor.execute(f"SELECT * FROM pets WHERE id = {id}").fetchall()[0]
-    cursor.execute(f"UPDATE pets SET play = {pet[3] + count} WHERE id = {id}")
+    if pet[3] + count <= 10:
+        cursor.execute(f"UPDATE pets SET play = {pet[3] + count} WHERE id = {id}")
+    else:
+        cursor.execute(f"UPDATE pets SET play = 10 WHERE id = {id}")
     db.commit()
     return 'Вы поиграли с питомцем!'
 
@@ -89,7 +97,10 @@ def play_pet(id: int):
 def walk_pet(id: int):
     count = random.randint(2, 5)
     pet = cursor.execute(f"SELECT * FROM pets WHERE id = {id}").fetchall()[0]
-    cursor.execute(f"UPDATE pets SET walk = {pet[2] + count} WHERE id = {id}")
+    if pet[2] + count <= 10:
+        cursor.execute(f"UPDATE pets SET walk = {pet[2] + count} WHERE id = {id}")
+    else:
+        cursor.execute(f"UPDATE pets SET walk = 10 WHERE id = {id}")
     db.commit()
     return 'Вы погуляли с питомцем!'
 
@@ -97,6 +108,9 @@ def walk_pet(id: int):
 def eat_pet(id: int):
     count = random.randint(2, 5)
     pet = cursor.execute(f"SELECT * FROM pets WHERE id = {id}").fetchall()[0]
-    cursor.execute(f"UPDATE pets SET eat = {pet[4] + count} WHERE id = {id}")
+    if pet[4] + count <= 10:
+        cursor.execute(f"UPDATE pets SET eat = {pet[4] + count} WHERE id = {id}")
+    else:
+        cursor.execute(f"UPDATE pets SET eat = 10 WHERE id = {id}")
     db.commit()
     return 'Вы покормили питомца!'
