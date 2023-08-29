@@ -6,6 +6,7 @@ import schedule
 from threading import Thread
 import requests
 import random
+from bs4 import BeautifulSoup
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
 
@@ -18,7 +19,7 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 def help(message):
-    bot.send_message(message.chat.id, 'Команды: /mute /unmute /ban /kick /reg /tamepet /pet')
+    bot.send_message(message.chat.id, 'Команды: /mute /unmute /ban /kick /reg /tamepet /pet /joke')
 
 
 @bot.message_handler(commands=['mute'])
@@ -184,6 +185,7 @@ def update():
     if text != '':
         bot.send_message(chat_id, text, parse_mode='HTML')
 
+
 @bot.message_handler(commands=['play'])
 def play(message):
     pet = database.get_pet(message.from_user.id)
@@ -220,7 +222,17 @@ def eat(message):
         bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.eat_pet(message.from_user.id))
 
 
-schedule.every(15).minutes.do(update)
+@bot.message_handler(commands=['joke'])
+def anekdot(message):
+    url = 'https://www.anekdot.ru/random/anekdot/'
+    r = requests.get(url)
+    soup = BeautifulSoup(r.text, 'html.parser')
+    anekdots = soup.find_all('div', class_ = 'text')
+    anekdot = random.choice([c.text for c in anekdots])
+    bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
+
+
+#schedule.every(15).minutes.do(update)
 
 
 def loop1():
