@@ -224,7 +224,11 @@ def eat(message):
 
 @bot.message_handler(commands=['joke'])
 def anekdot(message):
-    url = 'https://www.anekdot.ru/random/anekdot/'
+    if len( message.text.split(maxsplit=1)) == 2:
+        tag = message.text.split(maxsplit=1)[1]
+        url = 'https://www.anekdot.ru/tag/' + tag
+    else:    
+        url = 'https://www.anekdot.ru/random/anekdot/'
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
     anekdots = soup.find_all('div', class_ = 'text')
