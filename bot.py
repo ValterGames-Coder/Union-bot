@@ -170,20 +170,21 @@ def sex(message):
     #print(anekdots)
     data = response.json()
     gif = random.choice(data["results"])
+    chat_id = -1001866611952
     if len(message.text.split(maxsplit=1)) == 2:
         name = message.text.split(maxsplit=1)[1]
-        if message.chat.id == -1001866611952:
+        if message.chat.id == chat_id:
             bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с {name}',
                            parse_mode='HTML')
     elif message.reply_to_message.from_user.username is None:
         name = message.reply_to_message.from_user.first_name
-        if message.chat.id == -1001866611952:
+        if message.chat.id == chat_id:
             bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с '
                                                                                    f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
                            parse_mode='HTML')
     else:
         name = message.reply_to_message.from_user.username
-        if message.chat.id == -1001866611952:
+        if message.chat.id == chat_id:
             bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с '
                                                                                    f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
                            parse_mode='HTML')
