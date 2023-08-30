@@ -171,23 +171,61 @@ def sex(message):
     data = response.json()
     gif = random.choice(data["results"])
     chat_id = -1001866611952
-    if len(message.text.split(maxsplit=1)) == 2:
-        name = message.text.split(maxsplit=1)[1]
-        if message.chat.id == chat_id:
-            bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с {name}',
-                           parse_mode='HTML')
-    elif message.reply_to_message.from_user.username is None:
-        name = message.reply_to_message.from_user.first_name
-        if message.chat.id == chat_id:
-            bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с '
-                                                                                   f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
-                           parse_mode='HTML')
-    else:
-        name = message.reply_to_message.from_user.username
-        if message.chat.id == chat_id:
-            bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с '
-                                                                                   f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
-                           parse_mode='HTML')
+    if message.chat.id == chat_id:
+        if len(message.text.split(maxsplit=1)) == 2:
+            name = message.text.split(maxsplit=1)[1]
+            bot.send_animation(
+                message.chat.id,
+                gif['media'][0]['gif']['url'],
+                caption=f'Вы поебались с {name}',
+                parse_mode='HTML')
+        elif message.reply_to_message.from_user.username is None:
+            name = message.reply_to_message.from_user.first_name
+            bot.send_animation(
+                message.chat.id,
+                gif['media'][0]['gif']['url'],
+                caption=f'Вы поебались с <a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
+                parse_mode='HTML')
+        else:
+            name = message.reply_to_message.from_user.username
+            bot.send_animation(
+                message.chat.id,
+                gif['media'][0]['gif']['url'],
+                caption=f'Вы поебались с <a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
+                parse_mode='HTML')
+
+
+@bot.message_handler(commands=['cum'])
+def cum(message):
+    response = requests.get("https://g.tenor.com/v1/search?q=cum&key=LIVDSRZULELA&limit=50")
+    sadResponse = requests.get("https://g.tenor.com/v1/search?q=lonely&key=LIVDSRZULELA&limit=50")
+    sadData = sadResponse.json()
+    sadGif = random.choice(sadData["results"])
+    data = response.json()
+    gif = random.choice(data["results"])
+    chat_id = -1001866611952
+    if message.chat.id == chat_id:
+        if random.randint(0, 6) >= 3:
+            if len(message.text.split(maxsplit=1)) == 2:
+                name = message.text.split(maxsplit=1)[1]
+                bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы кончили на {name}',
+                                   parse_mode='HTML')
+            elif message.reply_to_message.from_user.username is None:
+                name = message.reply_to_message.from_user.first_name
+                bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы кончили на '
+                                                                                           f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
+                                   parse_mode='HTML')
+            else:
+                name = message.reply_to_message.from_user.username
+                bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы кончили на '
+                                                                                           f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
+                                   parse_mode='HTML')
+        else:
+            bot.send_animation(
+                message.chat.id,
+                sadGif['media'][0]['gif']['url'],
+                caption=f'У вас все получится',
+                parse_mode='HTML')
 
 
 @bot.message_handler(commands=['delete'])
@@ -229,8 +267,23 @@ def anekdot2(message):
     bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
 
 
-#schedule.every(15).minutes.do(update)
+def cat():
+    users = database.get_users()
+    user_in_chat = []
+    chat_id = -1001866611952
 
+    for user in users:
+        user_status = bot.get_chat_member(chat_id, user[0]).status
+        if user_status != 'left':
+            user_in_chat.append(user)
+
+    user = random.choice(user_in_chat)
+    bot.send_message(chat_id, f'😺 Котик дня: <a href="tg://user?id={user[0]}">{user[1]}</a>', parse_mode='HTML')
+
+
+#schedule.every(15).minutes.do(update)
+schedule.every().day.at("09:00").do(cat) # 6:00 at server
+#schedule.every().minute.do(cat)
 
 def loop1():
     print('----------------Pets start-----------------\n')
