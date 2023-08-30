@@ -7,8 +7,11 @@ from threading import Thread
 import requests
 import random
 from bs4 import BeautifulSoup
+import snscrape.modules.telegram as sns
+
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
+anekdotSns = sns.TelegramChannelScraper("baneksru")
 
 
 @bot.message_handler(commands=['start'])
@@ -83,7 +86,8 @@ def kick(message):
 @bot.message_handler(commands=['reg'])
 def reg(message):
     user = database.get_user(message.from_user.id)
-    if user is None:
+    print(user)
+    if bool(user) is False:
         if message.from_user.last_name is None:
             full_name = message.from_user.first_name
         else:
@@ -97,7 +101,8 @@ def reg(message):
 
 def on_reg(member):
     user = database.get_user(member.id)
-    if user is None:
+    print(user)
+    if bool(user) is False:
         if member.last_name is None:
             full_name = member.first_name
         else:
@@ -126,48 +131,6 @@ def everyone(message):
     gif = open("hog-rider-coc.mp4", 'rb')
     bot.send_animation(message.chat.id, gif, caption=f"<b>{everyone_message}</b>\n\n{text}"[:-2], parse_mode='HTML')
 
-
-@bot.message_handler(commands=['tamepet'])
-def tame_pet(message):
-    pets = database.get_pets()
-    pets_id = []
-    for pet in pets:
-        pets_id.append(pet[0])
-    if message.from_user.id in pets_id:
-        bot.reply_to(message, 'У тебя уже есть питомец')
-    elif len(message.text.split(' ')) == 2:
-        bot.reply_to(message, 'Вы не указали тип питомца (на английском желательно)')
-    elif len(message.text.split(' ')) == 3:
-        name = message.text.split(' ')[1]
-        type = message.text.split(' ')[2]
-        bot.reply_to(message, database.create_pet(message.from_user.id, name, type))
-    else:
-        bot.reply_to(message,'Вы не указали имя питомца')
-
-
-@bot.message_handler(commands=['pet'])
-def pet(message):
-    pet = database.get_pet(message.from_user.id)
-    print(pet)
-    if pet is None:
-        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
-    else:
-        text = f'<a href="tg://user?id={pet[0]}">Питомец {pet[1]}</a>\n'
-        text += f'🚶 Прогулки: \n<b>{bar(pet[2])}</b>\n'
-        text += f'😀 Настроение: \n<b>{bar(pet[3])}</b>\n'
-        text += f'🌯 Еда: \n<b>{bar(pet[4])}</b>\n'
-        print()
-        bot.send_message(message.chat.id, text, parse_mode='HTML')
-
-
-def bar(count: int):
-    text = ''
-    for i in range(10):
-        if i < count:
-            text += '■'
-        else:
-            text += '□'
-    return text
 
 @bot.message_handler(content_types=['new_chat_members'])
 def handler_new_member(message):
@@ -198,48 +161,71 @@ def play(message):
         bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.play_pet(message.from_user.id))
 
 
-@bot.message_handler(commands=['walk'])
-def walk(message):
-    pet = database.get_pet(message.from_user.id)
-    response = requests.get("https://g.tenor.com/v1/search?q={0}&key=LIVDSRZULELA&limit=30".format(f'walk with {pet[5]}'))
+@bot.message_handler(commands=['sex'])
+def sex(message):
+    response = requests.get("https://g.tenor.com/v1/search?q=sex&key=LIVDSRZULELA&limit=50")
+    #r = requests.get('https://hardgif.com/')
+    #soup = BeautifulSoup(r.text, 'html.parser')
+    #anekdots = soup.find('source')
+    #print(anekdots)
     data = response.json()
     gif = random.choice(data["results"])
-    if pet is None:
-        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
-    else:
-        bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.walk_pet(message.from_user.id))
-
-
-@bot.message_handler(commands=['eat'])
-def eat(message):
-    pet = database.get_pet(message.from_user.id)
-    response = requests.get("https://g.tenor.com/v1/search?q={0}&key=LIVDSRZULELA&limit=30".format(f'{pet[5]} eat'))
-    data = response.json()
-    gif = random.choice(data["results"])
-    if pet is None:
-        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
-    else:
-        bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.eat_pet(message.from_user.id))
-
-
-@bot.message_handler(commands=['joke'])
-def anekdot(message):
     if len(message.text.split(maxsplit=1)) == 2:
-        tag = message.text.split(maxsplit=1)[1]
-        url = 'https://www.anekdot.ru/tags/' + tag
-    else:    
-        url = 'https://www.anekdot.ru/random/anekdot/'
+        name = message.text.split(maxsplit=1)[1]
+        if message.chat.id == -1001866611952:
+            bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с {name}',
+                           parse_mode='HTML')
+    elif message.reply_to_message.from_user.username is None:
+        name = message.reply_to_message.from_user.first_name
+        if message.chat.id == -1001866611952:
+            bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с '
+                                                                                   f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
+                           parse_mode='HTML')
+    else:
+        name = message.reply_to_message.from_user.username
+        if message.chat.id == -1001866611952:
+            bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=f'Вы поебались с '
+                                                                                   f'<a href="tg://user?id={message.reply_to_message.from_user.id}">{name}</a>',
+                           parse_mode='HTML')
+
+
+@bot.message_handler(commands=['delete'])
+def delete(message):
+    if message.from_user.id in config.ID_ADMIN:
+        bot.delete_message(message_id=message.reply_to_message.id, chat_id=message.chat.id)
+
+
+@bot.message_handler(commands=['test'])
+def test(message):
+    print(message.chat.id)
+
+
+@bot.message_handler(commands=['joke_old'])
+def anekdot(message):
+    url = 'https://anekdoty.ru/samye-smeshnye/'
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
-    anekdots = soup.find_all('div', class_='text')
+    anekdots = soup.find_all('div', class_='holder-body')
     print(anekdots)
     if len(anekdots) <= 0:
         bot.send_message(message.chat.id, 'Нет такого тега', parse_mode='HTML')
     else:
         soup = BeautifulSoup(r.text, 'html.parser')
-        anekdots = soup.find_all('div', class_ = 'text')
+        anekdots = soup.find_all('div', class_ = 'holder-body')
         anekdot = random.choice([c.text for c in anekdots])
         bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
+
+
+@bot.message_handler(commands=['joke'])
+def anekdot2(message):
+    anekdots = []
+    for i, an in enumerate(anekdotSns.get_items()):
+        if i > 51:
+            break
+        anekdots.append(str(an.content))
+        print(f"{i}. {an.content}")
+    anekdot = random.choice([c for c in anekdots])
+    bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
 
 
 #schedule.every(15).minutes.do(update)
