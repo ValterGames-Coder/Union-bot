@@ -64,3 +64,15 @@ def bar(count: int):
         else:
             text += '□'
     return text
+
+
+@bot.message_handler(commands=['play'])
+def play(message):
+    pet = database.get_pet(message.from_user.id)
+    response = requests.get("https://g.tenor.com/v1/search?q={0}&key=LIVDSRZULELA&limit=30".format(f'{pet[5]} play'))
+    data = response.json()
+    gif = random.choice(data["results"])
+    if pet is None:
+        bot.reply_to(message, 'У вас нет питомца. Чтобы его приручить напишите /tamepet')
+    else:
+        bot.send_animation(message.chat.id, gif['media'][0]['gif']['url'], caption=database.play_pet(message.from_user.id))
