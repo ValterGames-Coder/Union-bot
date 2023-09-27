@@ -2,16 +2,12 @@ import config
 import time
 import database
 import telebot
-import schedule
 from threading import Thread
 import requests
 import random
 from bs4 import BeautifulSoup
-import snscrape.modules.telegram as sns
-
 
 bot = telebot.TeleBot(config.BOT_TOKEN)
-anekdotSns = sns.TelegramChannelScraper("baneksru")
 
 
 @bot.message_handler(commands=['start'])
@@ -22,7 +18,7 @@ def start(message):
 
 @bot.message_handler(commands=['help'])
 def help(message):
-    bot.send_message(message.chat.id, 'Команды: /mute /unmute /ban /kick /reg /tamepet /pet /joke')
+    bot.send_message(message.chat.id, 'Команды: /mute /unmute /ban /kick /reg /joke')
 
 
 @bot.message_handler(commands=['mute'])
@@ -43,17 +39,22 @@ def mute(message):
                                                until_date=time.time() + mute_time)
                     bot.send_message(message.chat.id, f'Участник @{message.reply_to_message.from_user.username} '
                                                         f'попал в мут')
+    else:
+        bot.reply_to(message.chat.id, '⚠ У тебя нет прав!')
 
 
 @bot.message_handler(commands=['unmute'])
 def unmute(message):
-    if message.reply_to_message and message.from_user.id in config.ID_ADMIN:
-        chat_id = message.chat.id
-        user_id = message.reply_to_message.from_user.id
-        bot.restrict_chat_member(chat_id, user_id, can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
-        bot.reply_to(message, f"Пользователь @{message.reply_to_message.from_user.username} размучен")
+    if message.from_user.id in config.ID_ADMIN:
+        if message.reply_to_message is None:
+            chat_id = message.chat.id
+            user_id = message.reply_to_message.from_user.id
+            bot.restrict_chat_member(chat_id, user_id, can_send_messages=True, can_send_media_messages=True, can_send_other_messages=True, can_add_web_page_previews=True)
+            bot.reply_to(message, f"Пользователь @{message.reply_to_message.from_user.username} размучен")
+        else:
+            bot.reply_to(message, "Вы не указали пользователя")
     else:
-        bot.reply_to(message, "Вы не указали пользователя")
+        bot.reply_to(message.chat.id, '⚠ У тебя нет прав!')
 
 
 @bot.message_handler(commands=['ban'])
@@ -67,20 +68,25 @@ def ban(message):
             bot.ban_chat_member(message.chat.id, message.reply_to_message.from_user.id)
             bot.send_message(message.chat.id, f'Участник @{message.reply_to_message.from_user.username} '
                                                         f'попал в бан')
+    else:
+        bot.reply_to(message.chat.id, '⚠ У тебя нет прав!')
 
 
 @bot.message_handler(commands=['kick'])
 def kick(message):
-    if message.reply_to_message and message.from_user.id in config.ID_ADMIN:
-        chat_id = message.chat.id
-        user_id = message.reply_to_message.from_user.id
-        if message.reply_to_message.from_user.id in config.ID_ADMIN:
-            bot.reply_to(message, "Невозможно кикнуть администратора")
+    if message.from_user.id in config.ID_ADMIN:
+        if message.reply_to_message is None:
+            chat_id = message.chat.id
+            user_id = message.reply_to_message.from_user.id
+            if message.reply_to_message.from_user.id in config.ID_ADMIN:
+                bot.reply_to(message, "Невозможно кикнуть администратора")
+            else:
+                bot.kick_chat_member(chat_id, user_id)
+                bot.reply_to(message, f"Пользователь @{message.reply_to_message.from_user.username} был кикнут")
         else:
-            bot.kick_chat_member(chat_id, user_id)
-            bot.reply_to(message, f"Пользователь @{message.reply_to_message.from_user.username} был кикнут")
+            bot.reply_to(message, "Вы не указали пользователя")
     else:
-        bot.reply_to(message, "Вы не указали пользователя")
+        bot.reply_to(message.chat.id, '⚠ У тебя нет прав!')
 
 
 @bot.message_handler(commands=['reg'])
@@ -142,67 +148,40 @@ def handler_left_member(message):
     on_del(message.left_chat_member)
 
 
-chat_id = -1001880123787
-def update():
-    text = database.update_pets()
-    if text != '':
-        bot.send_message(chat_id, text, parse_mode='HTML')
-
-
 @bot.message_handler(commands=['delete'])
 def delete(message):
     if message.from_user.id in config.ID_ADMIN:
         bot.delete_message(message_id=message.reply_to_message.id, chat_id=message.chat.id)
 
 
-@bot.message_handler(commands=['test'])
-def test(message):
-    print(message.chat.id)
-
-
-@bot.message_handler(commands=['joke_old'])
-def anekdot(message):
-    url = 'https://anekdoty.ru/samye-smeshnye/'
+@bot.message_handler(commands=['joke'])
+def joke(message):
+    url = 'https://baneks.site/random'
     r = requests.get(url)
     soup = BeautifulSoup(r.text, 'html.parser')
-    anekdots = soup.find_all('div', class_='holder-body')
-    print(anekdots)
-    if len(anekdots) <= 0:
-        bot.send_message(message.chat.id, 'Нет такого тега', parse_mode='HTML')
-    else:
-        soup = BeautifulSoup(r.text, 'html.parser')
-        anekdots = soup.find_all('div', class_ = 'holder-body')
-        anekdot = random.choice([c.text for c in anekdots])
-        bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
+    anekdot = soup.find('div', class_='block-content mdl-card__supporting-text mdl-color--grey-300 mdl-color-text--grey-900').find('p')
+    str_anekdot = anekdot.get_text()
+    bot.send_message(message.chat.id, str_anekdot, parse_mode='HTML')
+    #if len(anekdots) <= 0:
+        #bot.send_message(message.chat.id, 'Нет такого тега', parse_mode='HTML')
+    #else:
+        #soup = BeautifulSoup(r.text, 'html.parser')
+        #anekdots = soup.find_all('div', class_ = 'holder-body')
+        #anekdot = random.choice([c.text for c in anekdots])
 
 
-@bot.message_handler(commands=['joke'])
-def anekdot2(message):
-    anekdots = []
-    for i, an in enumerate(anekdotSns.get_items()):
-        if i > 51:
-            break
-        anekdots.append(str(an.content))
-        print(f"{i}. {an.content}")
-    anekdot = random.choice([c for c in anekdots])
-    bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
-
-
-#schedule.every(15).minutes.do(update)
-#schedule.every().minute.do(cat)
+#@bot.message_handler(commands=['old_joke'])
+#def old_joke(message):
+    #anekdots = []
+    #for i, an in enumerate(anekdotSns.get_items()):
+        #if i > 51:
+            #break
+        #anekdots.append(str(an.content))
+        #print(f"{i}. {an.content}")
+    #anekdot = random.choice([c for c in anekdots])
+    #bot.send_message(message.chat.id, anekdot, parse_mode='HTML')
 
 def loop1():
-    print('----------------Pets start-----------------\n')
-    while True:
-        try:
-            schedule.run_pending()
-            time.sleep(1)
-        except Exception as e:
-            print(e)
-            time.sleep(3)
-
-
-def loop2():
     print('----------------Bot start-----------------\n')
     while True:
         try:
@@ -214,4 +193,3 @@ def loop2():
 
 if __name__ == '__main__':
     Thread(target=loop1).start()
-    Thread(target=loop2).start()
